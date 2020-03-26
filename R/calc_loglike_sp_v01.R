@@ -3118,10 +3118,28 @@ calc_independent_likelihoods_on_each_branch_prebyte <- function(phy2, Qmat, clus
 			# mcmapply
 			#library(parallel)
 			#independent_likelihoods_on_each_branch = mcmapply(FUN=expokit_dgpadm_Qmat, Qmat=list(Qmat), t=phy2$edge.length, transpose_needed=TRUE, SIMPLIFY="array", mc.cores=Ncores)
-			independent_likelihoods_on_each_branch = clusterApply(cl=cluster_already_open, x=phy2$edge.length, fun=expokit_dgpadm_Qmat2, Qmat=Qmat, transpose_needed=TRUE)
+			# independent_likelihoods_on_each_branch = clusterApply(cl=cluster_already_open, x=phy2$edge.length, fun=expokit_dgpadm_Qmat2, Qmat=Qmat, transpose_needed=TRUE)
+			# Run in parallel using furrr (returns results in a list)
+		  message("Running in parallel")
+		  independent_likelihoods_on_each_branch_list = furrr::future_map(phy2$edge.length, ~expokit_dgpadm_Qmat2(times = .x, Qmat=Qmat, transpose_needed=TRUE))
+			# Need to convert results from list of matrices to array
+		  # (same as output from running mapply_likelihoods() )
+		  independent_likelihoods_on_each_branch = array(
+			  unlist(independent_likelihoods_on_each_branch_list), 
+			  dim = c(
+			    dim(independent_likelihoods_on_each_branch_list[[1]]), 
+			    length(independent_likelihoods_on_each_branch_list)
+			    )
+			)
+		  # Double-check that the results are the same as running in serial
+		  independent_likelihoods_on_each_branch_serial = mapply_likelihoods(Qmat, phy2, transpose_needed=TRUE)
+		  if(!isTRUE(all.equal(independent_likelihoods_on_each_branch, independent_likelihoods_on_each_branch_serial))) {
+		    stop("Parallel and serial results don't match")
+		  }
 			} else {
 			# Not parallel processing
 			#independent_likelihoods_on_each_branch = mapply(FUN=expokit_dgpadm_Qmat, Qmat=list(Qmat), t=phy2$edge.length, transpose_needed=TRUE, SIMPLIFY="array")
+			message("Running in serial")
 			independent_likelihoods_on_each_branch = mapply_likelihoods(Qmat, phy2, transpose_needed=TRUE)
 			#independent_likelihoods_on_each_branch
 			}
