@@ -31,7 +31,7 @@ importFrom("MultinomialCI", "multinomialCI")
 importFrom("optimx", "optimx")
 importFrom("GenSA", "GenSA")
 
-#importFrom("snow", "makeCluster", "clusterApply")
+
 importFrom("parallel", "makeCluster", "detectCores", "stopCluster", "clusterApply")
 
 
